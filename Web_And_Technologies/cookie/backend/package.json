@@ -1,0 +1,14 @@
+{
+  "name": "cookie-deep-dive-backend",
+  "version": "1.0.0",
+  "description": "Production-grade Cookie security and signed cookie verification backend",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}

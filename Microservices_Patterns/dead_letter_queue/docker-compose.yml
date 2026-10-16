@@ -1,0 +1,71 @@
+services:
+  # ============================================================================
+  # RABBITMQ BROKER WITH MANAGEMENT UI
+  # ============================================================================
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: dlq_rabbitmq
+    ports:
+      - "5672:5672"     # AMQP Protocol
+      - "15672:15672"   # Management Web UI (guest / guest)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - dlq_rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - dlq_network
+
+  # ============================================================================
+  # BACKEND SERVICE: PRODUCER, CONSUMER, RETRY & DLQ MANAGEMENT API
+  # ============================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dlq_backend
+    ports:
+      - "3007:3007"
+    environment:
+      PORT: 3007
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      CLIENT_URL: http://localhost:5180
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - dlq_network
+
+  # ============================================================================
+  # FRONTEND MONITORING & DLQ REDRIVE CONSOLE (REACT + VITE)
+  # ============================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: dlq_frontend
+    ports:
+      - "5180:5180"
+    environment:
+      VITE_PORT: 5180
+      VITE_API_URL: http://localhost:3007
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - dlq_network
+
+volumes:
+  dlq_rabbitmq_data:
+    driver: local
+
+networks:
+  dlq_network:
+    driver: bridge

@@ -1,0 +1,13 @@
+{
+  "name": "cookie-demo",
+  "version": "1.0.0",
+  "description": "Demo set cookie in Node.js",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.19.0",
+    "cookie-parser": "^1.4.6"
+  }
+}

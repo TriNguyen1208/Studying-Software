@@ -1,0 +1,15 @@
+{
+  "name": "bullmq-deep-dive-backend",
+  "version": "1.0.0",
+  "description": "Production-grade BullMQ job queue backend with Worker and QueueEvents",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "bullmq": "^5.7.1",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "ioredis": "^5.4.1"
+  }
+}

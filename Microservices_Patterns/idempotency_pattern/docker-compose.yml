@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: idempotency_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: idempotency_secure_password
+      POSTGRES_DB: idempotency_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - idempotency_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d idempotency_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: idempotency_redis
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 128mb
+      --maxmemory-policy allkeys-lru
+    ports:
+      - "6383:6379"
+    volumes:
+      - idempotency_redisdata:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  idempotency_pgdata:
+    driver: local
+  idempotency_redisdata:
+    driver: local

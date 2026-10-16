@@ -1,0 +1,58 @@
+services:
+  # ============================================================================
+  # REDIS MESSAGE BROKER & DATA STORE
+  # ============================================================================
+  redis:
+    image: redis:7.2-alpine
+    container_name: bullmq_redis
+    ports:
+      - "6380:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ============================================================================
+  # BULLMQ BACKEND SERVICE (PRODUCER + WORKER)
+  # ============================================================================
+  bullmq_backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bullmq_backend_service
+    ports:
+      - "4002:4002"
+    environment:
+      - PORT=4002
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - bullmq_net
+    restart: unless-stopped
+
+  # ============================================================================
+  # BULLMQ FRONTEND CONSOLE
+  # ============================================================================
+  bullmq_frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: bullmq_frontend_console
+    ports:
+      - "5180:5180"
+    environment:
+      - VITE_PORT=5180
+    depends_on:
+      - bullmq_backend
+    networks:
+      - bullmq_net
+    restart: unless-stopped
+
+networks:
+  bullmq_net:
+    driver: bridge

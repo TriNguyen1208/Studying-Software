@@ -1,0 +1,46 @@
+services:
+  # ============================================================================
+  # PM2 CLUSTER FLEET BACKEND
+  # ============================================================================
+  pm2_backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: pm2_deep_dive_backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    networks:
+      - pm2_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/cluster/status || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 4s
+
+  # ============================================================================
+  # PM2 CLUSTER FRONTEND CONSOLE
+  # ============================================================================
+  pm2_frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pm2_frontend_console
+    ports:
+      - "5174:5174"
+    environment:
+      - VITE_PORT=5174
+    depends_on:
+      pm2_backend:
+        condition: service_healthy
+    networks:
+      - pm2_net
+    restart: unless-stopped
+
+networks:
+  pm2_net:
+    driver: bridge

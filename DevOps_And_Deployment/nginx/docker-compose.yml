@@ -1,0 +1,110 @@
+services:
+  # ============================================================================
+  # NGINX REVERSE PROXY & GATEWAY
+  # ============================================================================
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: nginx_deep_dive_gateway
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - nginx_cache:/var/cache/nginx
+    depends_on:
+      backend-1:
+        condition: service_healthy
+      backend-2:
+        condition: service_healthy
+      backend-3:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+    networks:
+      - nginx_net
+    restart: unless-stopped
+
+  # ============================================================================
+  # UPSTREAM BACKEND REPLICA 1
+  # ============================================================================
+  backend-1:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nginx_backend_node_1
+    environment:
+      - PORT=3001
+      - INSTANCE_ID=backend-replica-1
+    networks:
+      - nginx_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 3s
+
+  # ============================================================================
+  # UPSTREAM BACKEND REPLICA 2
+  # ============================================================================
+  backend-2:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nginx_backend_node_2
+    environment:
+      - PORT=3002
+      - INSTANCE_ID=backend-replica-2
+    networks:
+      - nginx_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3002/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 3s
+
+  # ============================================================================
+  # UPSTREAM BACKEND REPLICA 3
+  # ============================================================================
+  backend-3:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nginx_backend_node_3
+    environment:
+      - PORT=3003
+      - INSTANCE_ID=backend-replica-3
+    networks:
+      - nginx_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3003/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 3s
+
+  # ============================================================================
+  # FRONTEND DASHBOARD (REACT / VITE)
+  # ============================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nginx_frontend_console
+    environment:
+      - VITE_PORT=5173
+    networks:
+      - nginx_net
+    restart: unless-stopped
+
+networks:
+  nginx_net:
+    driver: bridge
+
+volumes:
+  nginx_cache:
+    driver: local

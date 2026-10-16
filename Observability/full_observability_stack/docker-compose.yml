@@ -1,0 +1,131 @@
+services:
+  # ============================================================================
+  # 1. PROMETHEUS: Time-Series Metrics Engine (PULL Model)
+  # ============================================================================
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: observability_prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+      - "--web.enable-lifecycle"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - observability_net
+
+  # ============================================================================
+  # 2. GRAFANA: Unified Observability Dashboard & Visualizer
+  # ============================================================================
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: observability_grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - loki
+      - jaeger
+    networks:
+      - observability_net
+
+  # ============================================================================
+  # 3. LOKI: Log Aggregation Engine (Index Only Labels)
+  # ============================================================================
+  loki:
+    image: grafana/loki:2.9.5
+    container_name: observability_loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    networks:
+      - observability_net
+
+  # ============================================================================
+  # 4. JAEGER: Distributed Tracing System (OTLP Collector + UI)
+  # ============================================================================
+  jaeger:
+    image: jaegertracing/all-in-one:1.55
+    container_name: observability_jaeger
+    restart: unless-stopped
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686" # Jaeger Web UI
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+    networks:
+      - observability_net
+
+  # ============================================================================
+  # 5. BACKEND SERVICE: Instrumented E-Commerce API (Express + OTel + Prom-Client)
+  # ============================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: observability_backend
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+      - NODE_ENV=production
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318/v1/traces
+      - LOKI_HOST=http://loki:3100
+      - PROMETHEUS_METRICS_PATH=/metrics
+    depends_on:
+      - prometheus
+      - loki
+      - jaeger
+    networks:
+      - observability_net
+
+  # ============================================================================
+  # 6. FRONTEND: Interactive Control Center & Live Telemetry Inspector
+  # ============================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: observability_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:5001
+    depends_on:
+      - backend
+    networks:
+      - observability_net
+
+networks:
+  observability_net:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  loki_data:

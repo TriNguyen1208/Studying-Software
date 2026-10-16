@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # -------------------------------------------------------------
+  # Dịch vụ Cơ sở dữ liệu PostgreSQL cho Node.js Backend & Next.js
+  # -------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: nextjs_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: techstore_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d techstore_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # -------------------------------------------------------------
+  # Dịch vụ Redis Cache (Dùng cho Caching phân tán & Session Store)
+  # -------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: nextjs_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local

@@ -1,0 +1,17 @@
+{
+  "name": "pm2-deep-dive-backend",
+  "version": "1.0.0",
+  "description": "Production-grade Node.js cluster application for PM2 demonstration",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "pm2:start": "pm2 start ../ecosystem.config.js --env production",
+    "pm2:reload": "pm2 reload ../ecosystem.config.js",
+    "pm2:stop": "pm2 stop ../ecosystem.config.js",
+    "pm2:logs": "pm2 logs"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}

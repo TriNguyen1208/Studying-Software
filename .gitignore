@@ -1,0 +1,7 @@
+.DS_Store
+.agents
+node_modules
+.env
+.next/
+dist/
+.turbo/

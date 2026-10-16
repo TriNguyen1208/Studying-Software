@@ -1,0 +1,41 @@
+{
+  "name": "micro-frontend-demo",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "npm": ">=8.0.0",
+    "node": ">=16.0.0 "
+  },
+  "devDependencies": {
+    "turbo": "^1.10.12"
+  },
+  "scripts": {
+    "start": "yarn turbo run start",
+    "build": "yarn turbo run build",
+    "test": "yarn turbo run test"
+  },
+  "workspaces": [
+    "main",
+    "cart",
+    "products"
+  ],
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "packageManager": "yarn@3.6.1"
+}

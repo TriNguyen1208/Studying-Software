@@ -1,0 +1,55 @@
+services:
+  # ============================================================================
+  # FLAKY DOWNSTREAM SERVICE (SIMULATES TRANSIENT ERRORS)
+  # ============================================================================
+  flaky_service:
+    build:
+      context: ./flaky_service
+      dockerfile: Dockerfile
+    container_name: retry_flaky_service
+    ports:
+      - "3006:3006"
+    networks:
+      - retry_net
+    restart: unless-stopped
+
+  # ============================================================================
+  # RETRY GATEWAY BACKEND SERVICE
+  # ============================================================================
+  retry_backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: retry_gateway_service
+    ports:
+      - "3005:3005"
+    environment:
+      - PORT=3005
+      - FLAKY_SERVICE_URL=http://flaky_service:3006/process-payment
+    depends_on:
+      - flaky_service
+    networks:
+      - retry_net
+    restart: unless-stopped
+
+  # ============================================================================
+  # RETRY TIMELINE FRONTEND CONSOLE
+  # ============================================================================
+  retry_frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: retry_frontend_console
+    ports:
+      - "5179:5179"
+    environment:
+      - VITE_PORT=5179
+    depends_on:
+      - retry_backend
+    networks:
+      - retry_net
+    restart: unless-stopped
+
+networks:
+  retry_net:
+    driver: bridge

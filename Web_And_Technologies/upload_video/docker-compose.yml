@@ -1,0 +1,29 @@
+version: '3.8'
+services:
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  # worker:
+  #   build: 
+  #     context: .
+  #     dockerfile: worker/Dockerfile
+  #   depends_on:
+  #     - redis
+  #     - mongo
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     # Cung cấp biến môi trường để worker kết nối tới container thay vì localhost
+  #     - MONGO_URL=mongodb://mongo:27017/video_db
+  #     - REDIS_HOST=redis
+
+volumes:
+  mongo_data:

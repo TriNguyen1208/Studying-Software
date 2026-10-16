@@ -1,0 +1,39 @@
+services:
+  # ============================================================================
+  # COOKIE SECURITY BACKEND SERVICE
+  # ============================================================================
+  cookie_backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cookie_backend_service
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - COOKIE_SECRET=production_super_secret_signing_key_42
+    networks:
+      - cookie_net
+    restart: unless-stopped
+
+  # ============================================================================
+  # COOKIE SECURITY FRONTEND CONSOLE
+  # ============================================================================
+  cookie_frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cookie_frontend_console
+    ports:
+      - "5176:5176"
+    environment:
+      - VITE_PORT=5176
+    depends_on:
+      - cookie_backend
+    networks:
+      - cookie_net
+    restart: unless-stopped
+
+networks:
+  cookie_net:
+    driver: bridge

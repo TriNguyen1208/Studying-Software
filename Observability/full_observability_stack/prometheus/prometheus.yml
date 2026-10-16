@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+rule_files:
+  - "alert.rules.yml"
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "backend-service"
+    scrape_interval: 3s
+    metrics_path: "/metrics"
+    static_configs:
+      # Scrape inside docker network and host machine fallback
+      - targets: ["backend:5001", "host.docker.internal:5001"]
+        labels:
+          environment: "production-simulation"
+          service: "order-payment-service"

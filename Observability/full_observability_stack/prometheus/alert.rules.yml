@@ -1,0 +1,29 @@
+groups:
+  - name: observability_alerts
+    rules:
+      - alert: ServiceDown
+        expr: up{job="backend-service"} == 0
+        for: 15s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Dịch vụ Backend bị gián đoạn (Instance {{ $labels.instance }})"
+          description: "Backend service không phản hồi scrape request trong 15 giây liên tục."
+
+      - alert: HighHttpErrorRate
+        expr: (sum(rate(http_requests_total{status_code=~"5.."}[1m])) / sum(rate(http_requests_total[1m]))) * 100 > 5
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Tỷ lệ lỗi HTTP 5xx vượt ngưỡng 5%"
+          description: "Tỷ lệ lỗi 5xx hiện tại là {{ $value | printf \"%.2f\" }}% trên tổng lưu lượng."
+
+      - alert: HighP95Latency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[1m])) by (le)) > 1.0
+        for: 20s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Độ trễ P95 vượt quá 1 giây"
+          description: "95% các yêu cầu HTTP đang có độ trễ lớn hơn 1s (giá trị hiện tại: {{ $value | printf \"%.2f\" }}s)."

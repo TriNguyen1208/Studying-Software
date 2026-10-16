@@ -1,0 +1,30 @@
+services:
+  interceptor_backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: interceptor_backend_service
+    ports:
+      - "3000:3000"
+    networks:
+      - interceptor_net
+    restart: unless-stopped
+
+  interceptor_frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: interceptor_frontend_console
+    ports:
+      - "5177:5173"
+    environment:
+      - VITE_PORT=5173
+    depends_on:
+      - interceptor_backend
+    networks:
+      - interceptor_net
+    restart: unless-stopped
+
+networks:
+  interceptor_net:
+    driver: bridge

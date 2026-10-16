@@ -1,0 +1,55 @@
+services:
+  # ============================================================================
+  # DOWNSTREAM UNSTABLE PAYMENT SERVICE
+  # ============================================================================
+  unstable_service:
+    build:
+      context: ./unstable_service
+      dockerfile: Dockerfile
+    container_name: cb_downstream_service
+    ports:
+      - "3004:3004"
+    networks:
+      - cb_net
+    restart: unless-stopped
+
+  # ============================================================================
+  # API GATEWAY SERVICE (OPOSSUM CIRCUIT BREAKER)
+  # ============================================================================
+  gateway_backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cb_gateway_service
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - DOWNSTREAM_URL=http://unstable_service:3004/charge
+    depends_on:
+      - unstable_service
+    networks:
+      - cb_net
+    restart: unless-stopped
+
+  # ============================================================================
+  # CIRCUIT BREAKER FRONTEND CONSOLE
+  # ============================================================================
+  circuit_frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cb_frontend_console
+    ports:
+      - "5178:5178"
+    environment:
+      - VITE_PORT=5178
+    depends_on:
+      - gateway_backend
+    networks:
+      - cb_net
+    restart: unless-stopped
+
+networks:
+  cb_net:
+    driver: bridge

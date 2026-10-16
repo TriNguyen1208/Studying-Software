@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="vi"> <!-- Khai báo ngôn ngữ trang web là tiếng Việt -->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Upload Architecture Demo</title>
+  
+  <!-- CSS cơ bản để trang web trông gọn gàng hơn -->
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
+    .upload-container { border: 2px dashed #ccc; padding: 30px; text-align: center; border-radius: 10px; margin-bottom: 20px; }
+    .progress-bar-container { width: 100%; background-color: #e0e0e0; border-radius: 5px; margin-top: 15px; display: none; }
+    .progress-bar { width: 0%; height: 20px; background-color: #4CAF50; border-radius: 5px; transition: width 0.3s; }
+    #statusMessage { margin-top: 10px; font-weight: bold; color: #333; }
+    #resultContainer { display: none; margin-top: 20px; text-align: center; }
+    video { width: 100%; border-radius: 5px; outline: none; background: #000; }
+  </style>
+</head>
+<body>
+  <h2>Hệ Thống Xử Lý Video Demo</h2>
+  
+  <!-- Khu vực tải file -->
+  <div class="upload-container">
+    <!-- Input type file chỉ cho phép chọn định dạng video -->
+    <input type="file" id="videoInput" accept="video/*" style="display: none;" />
+    
+    <!-- Nút bấm giả để gọi đến input file bị ẩn (cho đẹp) -->
+    <button onclick="document.getElementById('videoInput').click()" style="padding: 10px 20px; cursor: pointer; font-size: 16px;">
+      Chọn Video để Upload
+    </button>
+    <p id="fileInfo" style="font-size: 14px; color: #666;"></p>
+    
+    <!-- Nút bắt đầu upload, mặc định bị vô hiệu hóa (disabled) cho tới khi chọn file -->
+    <button id="uploadBtn" disabled style="padding: 10px 20px; cursor: pointer; font-size: 16px; margin-top: 10px;">Bắt đầu Upload</button>
+  </div>
+
+  <!-- Thanh tiến trình upload -->
+  <div class="progress-bar-container" id="progressContainer">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+  
+  <!-- Chữ hiển thị trạng thái hiện tại (Đang upload, Đang xử lý...) -->
+  <div id="statusMessage"></div>
+
+  <!-- Khu vực hiển thị kết quả (Video player) sau khi hoàn thành -->
+  <div id="resultContainer">
+    <h3>Upload và Xử lý Hoàn Tất!</h3>
+    <!-- Thẻ video hỗ trợ HTML5, thuộc tính controls cho phép hiện nút play/pause -->
+    <!-- preload="metadata" yêu cầu trình duyệt chỉ tải phần moov atom (metadata) để biết độ dài, chưa tải toàn bộ dữ liệu -->
+    <video id="videoPlayer" controls preload="metadata"></video>
+  </div>
+
+  <!-- Nạp thư viện Socket.IO client từ CDN -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <!-- Nạp file logic Javascript của chúng ta -->
+  <script src="app.js"></script>
+</body>
+</html>

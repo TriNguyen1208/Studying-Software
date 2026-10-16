@@ -1,0 +1,59 @@
+services:
+  # ============================================================================
+  # REDIS MESSAGE BROKER (SCALING ADAPTER)
+  # ============================================================================
+  redis:
+    image: redis:7.2-alpine
+    container_name: ws_redis_broker
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ============================================================================
+  # WEBSOCKET BACKEND SERVICE
+  # ============================================================================
+  websocket_backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: websocket_backend_service
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - SERVER_INSTANCE_ID=ws-cluster-node-1
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - ws_net
+    restart: unless-stopped
+
+  # ============================================================================
+  # WEBSOCKET FRONTEND CONSOLE (REACT / VITE)
+  # ============================================================================
+  websocket_frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: websocket_frontend_console
+    ports:
+      - "5175:5175"
+    environment:
+      - VITE_PORT=5175
+    depends_on:
+      - websocket_backend
+    networks:
+      - ws_net
+    restart: unless-stopped
+
+networks:
+  ws_net:
+    driver: bridge

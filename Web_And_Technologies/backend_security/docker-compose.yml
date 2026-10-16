@@ -1,0 +1,55 @@
+services:
+  # ============================================================================
+  # REDIS (RATE LIMITING & SESSION STORE)
+  # ============================================================================
+  security_redis:
+    image: redis:7-alpine
+    container_name: security_redis_store
+    ports:
+      - "6380:6379"
+    restart: unless-stopped
+    networks:
+      - security_net
+
+  # ============================================================================
+  # BACKEND SECURITY LAB SERVICE
+  # ============================================================================
+  security_backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: security_backend_service
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - REDIS_HOST=security_redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=super_secret_jwt_signing_key_production_grade_12345
+    depends_on:
+      - security_redis
+    networks:
+      - security_net
+    restart: unless-stopped
+
+  # ============================================================================
+  # FRONTEND SECURITY CONSOLE (REACT / VITE)
+  # ============================================================================
+  security_frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: security_frontend_console
+    ports:
+      - "5177:5177"
+    environment:
+      - VITE_PORT=5177
+    depends_on:
+      - security_backend
+    networks:
+      - security_net
+    restart: unless-stopped
+
+networks:
+  security_net:
+    driver: bridge
